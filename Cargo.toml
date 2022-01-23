@@ -1,0 +1,16 @@
+[package]
+name = "atom_os"
+version = "0.1.0"
+edition = "2021"
+authors = ["LukasDoesDev <lukasdoesdev@gmail.com>"]
+
+[dependencies]
+bootloader = "0.9.8"
+#bootloader = "0.10.11"
+volatile = "0.2.6"
+#volatile = "0.4.4"
+spin = "0.5.2"
+
+[dependencies.lazy_static]
+version = "1.0"
+features = ["spin_no_std"]
