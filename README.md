@@ -19,3 +19,5 @@
   ```
 ### Stage 3
 * Create VGA buffer implementation
+* `println!` and `print!` implementations
+* Panic handler prints with the `println!` macro
