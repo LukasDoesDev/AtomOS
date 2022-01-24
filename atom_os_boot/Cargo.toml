@@ -1,0 +1,12 @@
+[package]
+name = "atom_os_boot"
+version = "0.1.0"
+edition = "2021"
+authors = ["LukasDoesDev <lukasdoesdev@gmail.com>"]
+
+[dependencies]
+bootloader-locator = "0.0.4" # for locating the `bootloader` dependency on disk
+locate-cargo-manifest = "0.2.0" # for locating the kernel's `Cargo.toml`
+pico-args = "0.4.2" # for argument parsing
+wait-timeout = "0.2.0" # so we can kill QEMU after a set timeout
+colored = "2.0.0"

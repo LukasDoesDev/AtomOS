@@ -26,6 +26,16 @@ pub enum Color {
     White = 15,
 }
 
+impl Color {
+    fn shift(color: u8) -> u8 {
+        if color == 15 {
+            0
+        } else {
+            color + 1
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(transparent)]
 struct ColorCode(u8);
@@ -33,6 +43,17 @@ struct ColorCode(u8);
 impl ColorCode {
     fn new(foreground: Color, background: Color) -> ColorCode {
         ColorCode((background as u8) << 4 | (foreground as u8))
+    }
+    fn split(&self) -> (u8, u8) {
+        let background = self.0 >> 4;
+        let foreground = self.0 ^ (background << 4);
+        (background, foreground)
+    }
+    fn shift(&self) -> ColorCode {
+        let (background, foreground) = self.split();
+        let background = Color::shift(background);
+        let foreground = Color::shift(foreground);
+        ColorCode(background << 4 | foreground)
     }
 }
 
