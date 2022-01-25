@@ -1,13 +1,14 @@
+use colored::Colorize;
+use std::time::Duration;
 use std::{
     path::{Path, PathBuf},
     process::Command,
 };
-use std::time::Duration;
-use colored::Colorize;
+use std::process::ExitStatus;
 use wait_timeout::ChildExt;
 
 const RUN_ARGS: &[&str] = &["--no-reboot", "-s"];
-const TEST_TIMEOUT: Duration = Duration::from_secs(30);
+const TEST_TIMEOUT: Duration = Duration::from_secs(300);
 
 fn main() {
     let mut args = std::env::args_os().skip(1); // skip executable name
@@ -19,10 +20,15 @@ fn main() {
     let mut pargs = pico_args::Arguments::from_vec(args.collect());
     let no_boot = pargs.contains("--no-run");
     let hide_qemu = pargs.contains("--hide-qemu");
+    let timeout = pargs.contains("--timeout");
 
     println!("{} Creating disk image...", "[BOOT]".bold().blue());
     let bios = create_disk_images(&kernel_binary_path);
-    println!("{} Created disk image at `{}`", "[BOOT]".bold().blue(), bios.display());
+    println!(
+        "{} Created disk image at `{}`",
+        "[BOOT]".bold().blue(),
+        bios.display()
+    );
 
     if no_boot {
         println!("{} Skipping boot", "[BOOT]".bold().blue());
@@ -33,17 +39,13 @@ fn main() {
     run_cmd
         .arg("-drive")
         .arg(format!("format=raw,file={}", bios.display()));
-    run_cmd
-        .arg("-serial")
-        .arg("stdio");
+    run_cmd.arg("-serial").arg("stdio");
     run_cmd
         .arg("-device")
         .arg("isa-debug-exit,iobase=0xf4,iosize=0x04");
     if hide_qemu {
         println!("{} Hiding QEMU", "[BOOT]".bold().blue());
-        run_cmd
-            .arg("-display")
-            .arg("none");
+        run_cmd.arg("-display").arg("none");
     }
     run_cmd.args(RUN_ARGS);
 
@@ -51,14 +53,17 @@ fn main() {
 
     let mut child = run_cmd.spawn().unwrap();
 
-    //let exit_status = run_cmd.status().unwrap();
-    let exit_status = match child.wait_timeout(TEST_TIMEOUT).unwrap() {
-        Some(status) => status,
-        None => {
-            println!("{} QEMU ran for too long", "[EXIT]".bold().red());
-            child.kill().unwrap();
-            child.wait().unwrap()
+    let exit_status = if timeout {
+        match child.wait_timeout(TEST_TIMEOUT).unwrap() {
+            Some(status) => status,
+            None => {
+                println!("{} QEMU ran for too long", "[EXIT]".bold().red());
+                child.kill().unwrap();
+                child.wait().unwrap()
+            }
         }
+    } else {
+        child.wait().unwrap()
     };
     if !exit_status.success() {
         match exit_status.code() {

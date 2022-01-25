@@ -1,72 +1,54 @@
 #![no_std] // don't link the Rust standard library
 #![no_main] // disable all Rust-level entry points
 #![feature(custom_test_frameworks)]
+#![feature(abi_x86_interrupt)]
 #![test_runner(crate::test::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 
-use core::panic::PanicInfo;
-use bootloader::{BootInfo, entry_point};
+use core::fmt::Write;
+use bootloader::{entry_point, BootInfo};
 
-mod vga_buffer;
+mod exit_qemu;
+mod interrupts;
 mod serial;
 mod test;
-mod exit_qemu;
+mod init;
+mod panic_handler;
+mod fb_logger;
 
-/// This function is called on panic.
-#[cfg(not(test))]
-#[panic_handler]
-fn panic(info: &PanicInfo) -> ! {
-    serial_println!("[PANIC] {}", info);
-    exit_qemu::exit(exit_qemu::QemuExitCode::Failed);
-    loop {}
-}
-
-/// This function is called on panic.
-#[cfg(test)]
-#[panic_handler]
-fn panic(info: &PanicInfo) -> ! {
-    test::test_panic_handler(info);
-}
 
 entry_point!(kernel_main);
 
 /// The main starting point of the program
 #[cfg(test)]
 fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
-    serial_println!("[INFO] Running AtomOS with bootloader version {}.{}.{}", boot_info.version_major, boot_info.version_minor, boot_info.version_patch);
-
+    init::init(boot_info);
     test_main();
-
     loop {}
 }
 
 /// The main starting point of the program
 #[cfg(not(test))]
 fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
-    serial_println!("[INFO] Running AtomOS with bootloader version {}.{}.{}", boot_info.version_major, boot_info.version_minor, boot_info.version_patch);
-
-    // turn the screen dark gray
-    if let Some(framebuffer) = boot_info.framebuffer.as_mut() {
-        let info = framebuffer.info();
-        serial_println!(
-                    "[INFO] Framebuffer is {} wide and {} tall and uses the {:?} pixel format",
-                    info.horizontal_resolution,
-                    info.vertical_resolution,
-                    info.pixel_format
-                );
-        for byte in framebuffer.buffer_mut() {
-            *byte = 0x30;
-        }
-    }
-
-    // turn the screen light gray
-    if let Some(framebuffer) = boot_info.framebuffer.as_mut() {
-        for byte in framebuffer.buffer_mut() {
-            *byte = 0x90;
-        }
-    }
+    init::init(boot_info);
 
     //panic!("My panic world");
 
     loop {}
+}
+
+#[macro_export]
+macro_rules! println {
+    ($($arg:tt)*) => {
+        $crate::fb_println!($($arg)*);
+        $crate::serial_println!($($arg)*);
+    };
+}
+
+#[macro_export]
+macro_rules! print {
+    ($($arg:tt)*) => {
+        $crate::fb_print!($($arg)*);
+        $crate::serial_print!($($arg)*);
+    };
 }
