@@ -1,7 +1,8 @@
-use core::panic::PanicInfo;
-use crate::{exit_qemu, serial_println};
-#[allow(unused_imports)]
+#[cfg(test)]
 use crate::test::test_panic_handler;
+#[cfg(not(test))]
+use crate::{exit_qemu, serial_println};
+use core::panic::PanicInfo;
 
 /// This function is called on panic.
 #[cfg(not(test))]

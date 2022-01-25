@@ -4,7 +4,6 @@ use std::{
     path::{Path, PathBuf},
     process::Command,
 };
-use std::process::ExitStatus;
 use wait_timeout::ChildExt;
 
 const RUN_ARGS: &[&str] = &["--no-reboot", "-s"];

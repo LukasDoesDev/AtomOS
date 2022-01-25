@@ -1,7 +1,7 @@
-use core::{fmt, ptr};
 use bootloader::boot_info::{FrameBufferInfo, PixelFormat};
 use conquer_once::spin::OnceCell;
-use noto_sans_mono_bitmap::{BitmapChar, BitmapHeight, FontWeight, get_bitmap, get_bitmap_width};
+use core::{fmt, ptr};
+use noto_sans_mono_bitmap::{get_bitmap, get_bitmap_width, BitmapChar, BitmapHeight, FontWeight};
 use spinning_top::Spinlock;
 
 pub fn init_logger(framebuffer: &'static mut [u8], info: FrameBufferInfo) {
@@ -24,7 +24,7 @@ impl LockedLogger {
     ///
     /// This method is not memory safe and should be only used when absolutely necessary.
     pub unsafe fn force_unlock(&self) {
-        unsafe { self.0.force_unlock() };
+        self.0.force_unlock();
     }
 }
 
@@ -116,7 +116,7 @@ impl Logger {
             PixelFormat::RGB => [intensity, intensity, intensity / 2, 0],
             PixelFormat::BGR => [intensity / 2, intensity, intensity, 0],
             PixelFormat::U8 => [if intensity > 200 { 0xf } else { 0 }, 0, 0, 0],
-            px_fmt => panic!("Unknown pixel format: {:?}", px_fmt)
+            px_fmt => panic!("Unknown pixel format: {:?}", px_fmt),
         };
         let bytes_per_pixel = self.info.bytes_per_pixel;
         let byte_offset = pixel_offset * bytes_per_pixel;
@@ -155,7 +155,11 @@ pub fn _print(args: fmt::Arguments) {
     use x86_64::instructions::interrupts;
 
     interrupts::without_interrupts(|| {
-        LOGGER.get().unwrap().0.lock()
+        LOGGER
+            .get()
+            .unwrap()
+            .0
+            .lock()
             .write_fmt(args)
             .expect("Printing to framebuffer failed");
     });

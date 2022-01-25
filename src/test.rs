@@ -1,8 +1,7 @@
-mod tests;
+use core::panic::PanicInfo;
 
 use crate::exit_qemu;
 use crate::{serial_print, serial_println};
-use core::panic::PanicInfo;
 
 pub trait Testable {
     fn run(&self);
@@ -19,7 +18,6 @@ where
     }
 }
 
-#[cfg(test)]
 pub fn test_runner(tests: &[&dyn Testable]) {
     serial_println!("[INFO] Running {} tests", tests.len());
     for test in tests {
@@ -28,9 +26,21 @@ pub fn test_runner(tests: &[&dyn Testable]) {
     exit_qemu::exit(exit_qemu::QemuExitCode::Success);
 }
 
-#[allow(dead_code)]
 pub fn test_panic_handler(info: &PanicInfo) -> ! {
     serial_println!("[failed]\n\n[PANIC] {}\n", info);
     exit_qemu::exit(exit_qemu::QemuExitCode::Failed);
     loop {}
+}
+
+#[cfg(test)]
+pub mod tests {
+    #[test_case]
+    fn trivial_assertion() {
+        assert_eq!(1, 1);
+    }
+
+    #[test_case]
+    fn trivial_assertion_2() {
+        assert_ne!("42", "answer to life, the universe and everything");
+    }
 }
