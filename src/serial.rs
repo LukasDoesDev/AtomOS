@@ -1,12 +1,13 @@
+use core::fmt;
 use lazy_static::lazy_static;
 use spin::Mutex;
 use uart_16550::SerialPort;
-use core::fmt;
 
 const SERIAL_IO_PORT: u16 = 0x3F8;
 
 lazy_static! {
-    pub static ref SERIAL_WRITER: Mutex<SerialPort> = Mutex::new(unsafe { SerialPort::new(SERIAL_IO_PORT) });
+    pub static ref SERIAL_WRITER: Mutex<SerialPort> =
+        Mutex::new(unsafe { SerialPort::new(SERIAL_IO_PORT) });
 }
 
 #[macro_export]
@@ -26,7 +27,14 @@ macro_rules! serial_println {
 #[doc(hidden)]
 pub fn _print(args: fmt::Arguments) {
     use core::fmt::Write;
-    SERIAL_WRITER.lock().write_fmt(args).unwrap();
+    use x86_64::instructions::interrupts;
+
+    interrupts::without_interrupts(|| {
+        SERIAL_WRITER
+            .lock()
+            .write_fmt(args)
+            .expect("Printing to serial failed");
+    });
 }
 
 /*use alloc::vec;
