@@ -1,3 +1,5 @@
+# Moved to [GitLab](https://gitlab.com/LukasDoesDev/AtomOS)
+
 # AtomOS
 ![](https://img.shields.io/badge/rust%20std-disabled-blue)
 
